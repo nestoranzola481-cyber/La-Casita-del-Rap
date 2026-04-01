@@ -212,14 +212,11 @@
         }
     </script>
     <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  // 1. Importamos las funciones específicas para la Base de Datos (Database)
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  // 2. Tus credenciales exactas
   const firebaseConfig = {
     apiKey: "AIzaSyCkLSPUXq8bkVaEFyVTZSlT5wlRKn-PvdE",
     authDomain: "la-casita-del-rap.firebaseapp.com",
@@ -227,12 +224,59 @@
     storageBucket: "la-casita-del-rap.firebasestorage.app",
     messagingSenderId: "187845612067",
     appId: "1:187845612067:web:d682f59d7f9cd884439796",
-    measurementId: "G-N7SRN45M32"
+    measurementId: "G-N7SRN45M32",
+    // Esta línea es VITAL para que sepa dónde guardar los datos
+    databaseURL: "https://la-casita-del-rap-default-rtdb.firebaseio.com" 
   };
 
-  // Initialize Firebase
+  // 3. Inicializamos la conexión
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  const db = getDatabase(app);
+  const postRef = ref(db, 'rimas');
+
+  // 4. HACEMOS LA FUNCIÓN GLOBAL (Para que el botón de tu HTML funcione)
+  window.publishBar = function() {
+      const textInput = document.getElementById('newPostText');
+      const text = textInput.value;
+      
+      if(text.trim() === "") return;
+      
+      // Enviamos la rima a la nube de Firebase
+      push(postRef, {
+          user: "MC_Ocumare", 
+          text: text,
+          timestamp: Date.now()
+      });
+      
+      textInput.value = "";
+      toggleModal(); // Cerramos la ventana de escribir
+  };
+
+  // 5. ESCUCHAMOS EN TIEMPO REAL (Para que aparezcan las rimas de todos)
+  onChildAdded(postRef, (snapshot) => {
+      const post = snapshot.val();
+      const feed = document.getElementById('feed');
+      
+      const newPost = document.createElement('article');
+      newPost.className = 'post-card';
+      newPost.innerHTML = `
+          <div style="padding:15px; display:flex; align-items:center;">
+              <img src="https://i.pravatar.cc/150?u=${post.user}" style="width:40px; height:40px; border:1px solid var(--accent-green); border-radius:50%;">
+              <div style="margin-left:10px;">
+                  <span style="display:block; font-weight:900;">${post.user}</span>
+                  <span style="font-size:10px; color:var(--accent-neon)">EN EL BARRIO</span>
+              </div>
+          </div>
+          <div style="padding:0 15px 15px;">
+              <p class="post-text">${post.text}</p>
+          </div>
+          <div style="display:flex; border-top:1px solid #222;">
+                <button class="action-btn like-trigger"><i class="fas fa-fist-raised"></i> RESPETO</button>
+          </div>
+      `;
+      feed.prepend(newPost); // La rima más nueva aparece arriba
+  });
 </script>
+
 </body>
 </html>
