@@ -211,12 +211,10 @@
             setTimeout(() => t.remove(), 2500);
         }
     </script>
-    <script type="module">
-  // 1. Importamos las funciones específicas para la Base de Datos (Database)
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  // 2. Tus credenciales exactas
   const firebaseConfig = {
     apiKey: "AIzaSyCkLSPUXq8bkVaEFyVTZSlT5wlRKn-PvdE",
     authDomain: "la-casita-del-rap.firebaseapp.com",
@@ -224,57 +222,79 @@
     storageBucket: "la-casita-del-rap.firebasestorage.app",
     messagingSenderId: "187845612067",
     appId: "1:187845612067:web:d682f59d7f9cd884439796",
-    measurementId: "G-N7SRN45M32",
-    // Esta línea es VITAL para que sepa dónde guardar los datos
-    databaseURL: "https://la-casita-del-rap-default-rtdb.firebaseio.com" 
+    databaseURL: "https://la-casita-del-rap-default-rtdb.firebaseio.com"
   };
 
-  // 3. Inicializamos la conexión
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const postRef = ref(db, 'rimas');
 
-  // 4. HACEMOS LA FUNCIÓN GLOBAL (Para que el botón de tu HTML funcione)
+  // --- SISTEMA DE SESIÓN "ESTILO FACEBOOK" SIN REGISTRO ---
+  let usuarioActivo = JSON.parse(localStorage.getItem("perfilRap"));
+
+  if (!usuarioActivo) {
+      // Si es nuevo, creamos su "DNI" de rapero
+      const nombre = prompt("🔥 BIENVENIDO A LA CASITA 🔥\n¿Cuál es tu nombre de MC / Usuario?");
+      const avatar = prompt("Elige un emoji para tu foto de perfil (ejemplo: 🎤, 🔥, 😎, 👑)");
+      
+      usuarioActivo = {
+          nombre: nombre || "Anónimo_MC",
+          avatar: avatar || "👤",
+          id: "user_" + Math.random().toString(36).substr(2, 9)
+      };
+      
+      localStorage.setItem("perfilRap", JSON.stringify(usuarioActivo));
+  }
+
+  // FUNCIÓN PARA PUBLICAR (CON TU CONTEXTO)
   window.publishBar = function() {
       const textInput = document.getElementById('newPostText');
       const text = textInput.value;
       
       if(text.trim() === "") return;
       
-      // Enviamos la rima a la nube de Firebase
       push(postRef, {
-          user: "MC_Ocumare", 
+          userId: usuarioActivo.id,
+          user: usuarioActivo.nombre,
+          avatar: usuarioActivo.avatar,
           text: text,
           timestamp: Date.now()
       });
       
       textInput.value = "";
-      toggleModal(); // Cerramos la ventana de escribir
+      toggleModal();
   };
 
-  // 5. ESCUCHAMOS EN TIEMPO REAL (Para que aparezcan las rimas de todos)
+  // RENDERIZAR EL MURO (FEED)
   onChildAdded(postRef, (snapshot) => {
       const post = snapshot.val();
       const feed = document.getElementById('feed');
       
       const newPost = document.createElement('article');
       newPost.className = 'post-card';
+      
+      // Si el post es del usuario actual, le ponemos un borde especial
+      const esMio = post.userId === usuarioActivo.id ? 'border: 1px solid var(--accent-green);' : '';
+
       newPost.innerHTML = `
-          <div style="padding:15px; display:flex; align-items:center;">
-              <img src="https://i.pravatar.cc/150?u=${post.user}" style="width:40px; height:40px; border:1px solid var(--accent-green); border-radius:50%;">
-              <div style="margin-left:10px;">
-                  <span style="display:block; font-weight:900;">${post.user}</span>
-                  <span style="font-size:10px; color:var(--accent-neon)">EN EL BARRIO</span>
+          <div style="padding:15px; display:flex; align-items:center; ${esMio}">
+              <div style="font-size:30px; background:#111; padding:5px; border-radius:50%; width:45px; height:45px; display:flex; justify-content:center; align-items:center;">
+                  ${post.avatar}
+              </div>
+              <div style="margin-left:12px;">
+                  <span style="display:block; font-weight:900; color:white;">${post.user}</span>
+                  <span style="font-size:10px; color:var(--accent-neon)">${new Date(post.timestamp).toLocaleTimeString()}</span>
               </div>
           </div>
           <div style="padding:0 15px 15px;">
-              <p class="post-text">${post.text}</p>
+              <p class="post-text" style="color:#ccc; line-height:1.4;">${post.text}</p>
           </div>
-          <div style="display:flex; border-top:1px solid #222;">
-                <button class="action-btn like-trigger"><i class="fas fa-fist-raised"></i> RESPETO</button>
+          <div style="display:flex; border-top:1px solid #222; justify-content: space-around; padding:10px 0;">
+                <button class="action-btn" style="background:none; border:none; color:#888;"><i class="fas fa-fist-raised"></i> RESPETO</button>
+                <button class="action-btn" style="background:none; border:none; color:#888;"><i class="fas fa-comment"></i> COMENTAR</button>
           </div>
       `;
-      feed.prepend(newPost); // La rima más nueva aparece arriba
+      feed.prepend(newPost);
   });
 </script>
 
