@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#050505">
+    <title>La Casita del Rap - Street Social</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-panel: #121212;
+            --accent-neon: #bc13fe; 
+            --accent-green: #20ff06; 
+            --text-main: #ffffff;
+            --text-dim: #888888;
+            --brand-font: 'Permanent Marker', cursive;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+            color: var(--text-main);
+            margin: 0; padding-top: 150px; padding-bottom: 80px;
+            min-height: 100vh; overflow-x: hidden;
+        }
+
+        /* --- HEADER --- */
+        .app-header {
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            background: rgba(5, 5, 5, 0.98); border-bottom: 3px solid var(--accent-neon);
+            box-shadow: 0 0 20px rgba(188, 19, 254, 0.2);
+        }
+
+        .app-logo { font-family: var(--brand-font); font-size: 24px; color: var(--accent-green); text-shadow: 2px 2px #000; cursor: pointer; }
+        .search-input { width: 100%; padding: 12px; background: #1a1a1a; border: none; border-left: 4px solid var(--accent-green); color: white; outline: none; }
+
+        /* --- FEED & POSTS --- */
+        .post-card {
+            background: var(--bg-panel); border: 1px solid #222; margin: 0 20px 25px;
+            position: relative; animation: slideIn 0.4s ease-out;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+
+        .post-card::before { content: ""; position: absolute; left: 0; top: 0; width: 4px; height: 100%; background: var(--accent-neon); }
+        .action-btn { background: none; border: none; color: var(--text-dim); padding: 12px; cursor: pointer; font-weight: bold; flex: 1; font-size: 11px; }
+        .action-btn.active { color: var(--accent-green); text-shadow: 0 0 8px var(--accent-green); }
+
+        /* --- MODAL PARA PUBLICAR (ESTILO CALLEJERO) --- */
+        #publishModal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-box {
+            background: var(--bg-panel); width: 100%; max-width: 500px; padding: 20px;
+            border: 2px solid var(--accent-neon); position: relative;
+        }
+        .modal-box textarea {
+            width: 100%; height: 150px; background: #1a1a1a; border: 1px solid #333;
+            color: white; padding: 15px; font-family: inherit; resize: none; outline: none;
+            border-left: 4px solid var(--accent-green);
+        }
+
+        /* --- NAV --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; height: 70px;
+            background: #000; border-top: 2px solid var(--accent-green);
+            display: flex; justify-content: space-around; align-items: center; z-index: 1000;
+        }
+        .nav-item { background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; }
+        .nav-item.active { color: var(--accent-green); }
+        
+        .create-btn {
+            width: 55px; height: 55px; background: var(--accent-neon); color: white; border: none;
+            font-size: 24px; transform: rotate(-3deg) translateY(-15px);
+            box-shadow: 4px 4px 0px var(--accent-green); cursor: pointer;
+        }
+
+        .toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: var(--accent-green); color: black; padding: 10px 20px;
+            font-weight: 800; border-radius: 2px; z-index: 3000; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding: 15px 20px;">
+            <div class="app-logo" onclick="location.reload()">LA CASITA DEL RAP</div>
+            <div style="display:flex; gap:15px; font-size: 20px;">
+                <i class="fas fa-microphone-alt" onclick="showToast('Grabando barras...')"></i>
+                <i class="fas fa-bolt" onclick="showToast('Notificaciones de la zona')"></i>
+            </div>
+        </div>
+        <div style="padding: 0 20px 15px;">
+            <input type="text" id="mainSearch" class="search-input" placeholder="Busca rimas en el asfalto...">
+        </div>
+    </header>
+
+    <main id="feed">
+        <article class="post-card">
+            <div style="padding:15px; display:flex; align-items:center;">
+                <img src="https://i.pravatar.cc/150?u=raps" style="width:40px; height:40px; border:1px solid var(--accent-green);">
+                <div style="margin-left:10px;">
+                    <span style="display:block; font-weight:900;">Admin_Casita</span>
+                    <span style="font-size:10px; color:var(--accent-neon)">ORIGINAL MC</span>
+                </div>
+            </div>
+            <div style="padding:0 15px 15px;">
+                <p class="post-text">Bienvenidos a la nueva era. Suelten sus rimas, respeten el código de la calle. 🎤🔥</p>
+            </div>
+            <div style="display:flex; border-top:1px solid #222;">
+                <button class="action-btn like-trigger"><i class="fas fa-fist-raised"></i> RESPETO</button>
+                <button class="action-btn" onclick="showToast('Rima algo debajo...')"><i class="fas fa-comment"></i> COMENTAR</button>
+                <button class="action-btn" onclick="showToast('Compartido en la cuadra')"><i class="fas fa-share"></i> SOLTAR</button>
+            </div>
+        </article>
+    </main>
+
+    <div id="publishModal">
+        <div class="modal-box">
+            <h2 style="font-family:var(--brand-font); color:var(--accent-green); margin-bottom:15px;">NUEVA BARRA</h2>
+            <textarea id="newPostText" placeholder="Escribe tu rima aquí..."></textarea>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button onclick="publishBar()" style="flex:2; background:var(--accent-green); border:none; padding:10px; font-weight:900; cursor:pointer;">SOLTAR RIMA</button>
+                <button onclick="toggleModal()" style="flex:1; background:#333; border:none; color:white; cursor:pointer;">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <button class="nav-item active"><i class="fas fa-home"></i></button>
+        <button class="nav-item" onclick="showToast('Explorando el barrio...')"><i class="fas fa-compass"></i></button>
+        <button class="create-btn" onclick="toggleModal()"><i class="fas fa-plus"></i></button>
+        <button class="nav-item" onclick="showToast('Mensajes directos')"><i class="fas fa-comment-dots"></i></button>
+        <button class="nav-item" onclick="showToast('Perfil del MC')"><i class="fas fa-user-ninja"></i></button>
+    </nav>
+
+    <script>
+        // 1. ABRIR/CERRAR MODAL
+        function toggleModal() {
+            const m = document.getElementById('publishModal');
+            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+            if(m.style.display === 'flex') document.getElementById('newPostText').focus();
+        }
+
+        // 2. PUBLICAR DINÁMICAMENTE (Lógica de Red Social)
+        function publishBar() {
+            const text = document.getElementById('newPostText').value;
+            if(text.trim() === "") return showToast("¡No puedes soltar un silencio!");
+
+            const feed = document.getElementById('feed');
+            const newPost = document.createElement('article');
+            newPost.className = 'post-card';
+            
+            newPost.innerHTML = `
+                <div style="padding:15px; display:flex; align-items:center;">
+                    <img src="https://i.pravatar.cc/150?u=yo" style="width:40px; height:40px; border:1px solid var(--accent-green);">
+                    <div style="margin-left:10px;">
+                        <span style="display:block; font-weight:900;">Tú_MC</span>
+                        <span style="font-size:10px; color:var(--accent-neon)">JUSTO AHORA</span>
+                    </div>
+                </div>
+                <div style="padding:0 15px 15px;">
+                    <p class="post-text">${text}</p>
+                </div>
+                <div style="display:flex; border-top:1px solid #222;">
+                    <button class="action-btn like-trigger"><i class="fas fa-fist-raised"></i> RESPETO</button>
+                    <button class="action-btn"><i class="fas fa-comment"></i> COMENTAR</button>
+                    <button class="action-btn"><i class="fas fa-share"></i> SOLTAR</button>
+                </div>
+            `;
+
+            feed.prepend(newPost); // Agrega al inicio del muro
+            document.getElementById('newPostText').value = ""; // Limpia editor
+            toggleModal(); // Cierra ventana
+            showToast("¡Barra soltada con éxito! 🔥");
+        }
+
+        // 3. SISTEMA DE RESPETO (EVENT DELEGATION)
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.like-trigger');
+            if(btn) {
+                btn.classList.toggle('active');
+                btn.innerHTML = btn.classList.contains('active') ? 
+                    '<i class="fas fa-fist-raised"></i> RESPETADO' : 
+                    '<i class="fas fa-fist-raised"></i> RESPETO';
+            }
+        });
+
+        // 4. BUSCADOR
+        document.getElementById('mainSearch').addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.post-card').forEach(post => {
+                const text = post.querySelector('.post-text').innerText.toLowerCase();
+                post.style.display = text.includes(query) ? 'block' : 'none';
+            });
+        });
+
+        // 5. TOAST
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+    </script>
+</body>
+</html>
